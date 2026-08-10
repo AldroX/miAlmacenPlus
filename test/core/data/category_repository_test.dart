@@ -47,7 +47,14 @@ void main() {
       for (final cat in categories) {
         expect(cat.id, isNotEmpty);
         // UUID v4 format check: 8-4-4-4-12 hex chars
-        expect(cat.id, matches(RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')));
+        expect(
+          cat.id,
+          matches(
+            RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
       }
     });
   });

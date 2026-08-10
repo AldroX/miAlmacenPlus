@@ -57,38 +57,55 @@ void main() {
       await db.close();
     });
 
-    test('getForProduct returns movements in descending order (newest first)', () async {
-      final movements = await movementRepo.getForProduct(productId!);
-      expect(movements, hasLength(3)); // INITIAL_STOCK + purchase + sale
+    test(
+      'getForProduct returns movements in descending order (newest first)',
+      () async {
+        final movements = await movementRepo.getForProduct(productId!);
+        expect(movements, hasLength(3)); // INITIAL_STOCK + purchase + sale
 
-      // Should be ordered by occurredAt DESC
-      expect(movements[0].reason, MovementReason.sale);
-      expect(movements[1].reason, MovementReason.purchase);
-      expect(movements[2].reason, MovementReason.initialStock);
-    });
+        // Should be ordered by occurredAt DESC
+        expect(movements[0].reason, MovementReason.sale);
+        expect(movements[1].reason, MovementReason.purchase);
+        expect(movements[2].reason, MovementReason.initialStock);
+      },
+    );
 
     test('getForProduct returns correct stock before/after', () async {
       final movements = await movementRepo.getForProduct(productId!);
 
       // INITIAL_STOCK: 0 -> 20
-      final initial = movements.where((m) => m.reason == MovementReason.initialStock).first;
+      final initial = movements
+          .where((m) => m.reason == MovementReason.initialStock)
+          .first;
       expect(initial.stockBefore, 0);
       expect(initial.stockAfter, 20);
 
       // Purchase: 20 -> 30
-      final purchase = movements.where((m) => m.reason == MovementReason.purchase).first;
+      final purchase = movements
+          .where((m) => m.reason == MovementReason.purchase)
+          .first;
       expect(purchase.stockBefore, 20);
       expect(purchase.stockAfter, 30);
 
       // Sale: 30 -> 25
-      final sale = movements.where((m) => m.reason == MovementReason.sale).first;
+      final sale = movements
+          .where((m) => m.reason == MovementReason.sale)
+          .first;
       expect(sale.stockBefore, 30);
       expect(sale.stockAfter, 25);
     });
 
     test('getForProduct supports pagination', () async {
-      final page1 = await movementRepo.getForProduct(productId!, limit: 2, offset: 0);
-      final page2 = await movementRepo.getForProduct(productId!, limit: 2, offset: 2);
+      final page1 = await movementRepo.getForProduct(
+        productId!,
+        limit: 2,
+        offset: 0,
+      );
+      final page2 = await movementRepo.getForProduct(
+        productId!,
+        limit: 2,
+        offset: 2,
+      );
 
       expect(page1, hasLength(2));
       expect(page2, hasLength(1));

@@ -35,25 +35,28 @@ void main() {
     });
 
     group('create', () {
-      test('creates a product with initial stock and records INITIAL_STOCK movement', () async {
-        final product = await productRepo.create(
-          categoryId: categoryId!,
-          userId: defaultUserId!,
-          name: 'Café',
-          unit: 'kg',
-          minimumStock: 5,
-          initialStock: 20,
-        );
+      test(
+        'creates a product with initial stock and records INITIAL_STOCK movement',
+        () async {
+          final product = await productRepo.create(
+            categoryId: categoryId!,
+            userId: defaultUserId!,
+            name: 'Café',
+            unit: 'kg',
+            minimumStock: 5,
+            initialStock: 20,
+          );
 
-        expect(product.id, isNotEmpty);
-        expect(product.name, 'Café');
-        expect(product.unit, 'kg');
-        expect(product.minimumStock, 5);
-        expect(product.currentStock, 20);
-        expect(product.categoryId, categoryId);
-        expect(product.userId, defaultUserId);
-        expect(product.isActive, isTrue);
-      });
+          expect(product.id, isNotEmpty);
+          expect(product.name, 'Café');
+          expect(product.unit, 'kg');
+          expect(product.minimumStock, 5);
+          expect(product.currentStock, 20);
+          expect(product.categoryId, categoryId);
+          expect(product.userId, defaultUserId);
+          expect(product.isActive, isTrue);
+        },
+      );
 
       test('created product has correct stock status', () async {
         final product = await productRepo.create(
@@ -65,7 +68,10 @@ void main() {
           initialStock: 20,
         );
 
-        final status = stockStatusOf(product.currentStock, product.minimumStock);
+        final status = stockStatusOf(
+          product.currentStock,
+          product.minimumStock,
+        );
         expect(status, StockStatus.normal);
       });
 
@@ -266,7 +272,11 @@ void main() {
         expect(updated.unit, 'bolsa');
         expect(updated.minimumStock, 10);
         expect(updated.description, 'Granos seleccionados');
-        expect(updated.currentStock, 20, reason: 'currentStock must never change via update');
+        expect(
+          updated.currentStock,
+          20,
+          reason: 'currentStock must never change via update',
+        );
       });
 
       test('rejects update of non-existent product', () async {
@@ -454,7 +464,11 @@ void main() {
         );
 
         // INCOMING reasons
-        for (final reason in [MovementReason.purchase, MovementReason.return_, MovementReason.initialStock]) {
+        for (final reason in [
+          MovementReason.purchase,
+          MovementReason.return_,
+          MovementReason.initialStock,
+        ]) {
           final m = await productRepo.recordMovement(
             productId: product.id,
             userId: defaultUserId!,
@@ -466,7 +480,12 @@ void main() {
         }
 
         // OUTGOING reasons
-        for (final reason in [MovementReason.sale, MovementReason.consumption, MovementReason.loss, MovementReason.online]) {
+        for (final reason in [
+          MovementReason.sale,
+          MovementReason.consumption,
+          MovementReason.loss,
+          MovementReason.online,
+        ]) {
           final m = await productRepo.recordMovement(
             productId: product.id,
             userId: defaultUserId!,
@@ -540,7 +559,11 @@ void main() {
 
         // Recompute must match the stored stock AND the domain projection.
         final recomputed = await productRepo.recomputeStock(product.id);
-        expect(recomputed, stored, reason: 'recompute must equal currentStock (spec 2.1)');
+        expect(
+          recomputed,
+          stored,
+          reason: 'recompute must equal currentStock (spec 2.1)',
+        );
       });
     });
   });

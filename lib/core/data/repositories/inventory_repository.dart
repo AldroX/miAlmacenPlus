@@ -4,7 +4,8 @@ import 'package:mi_almacen_plus/core/domain/errors.dart';
 import 'package:mi_almacen_plus/core/domain/entities/user.dart' as domain;
 import 'package:mi_almacen_plus/core/domain/entities/category.dart' as domain;
 import 'package:mi_almacen_plus/core/domain/entities/product.dart' as domain;
-import 'package:mi_almacen_plus/core/domain/entities/inventory_movement.dart' as domain;
+import 'package:mi_almacen_plus/core/domain/entities/inventory_movement.dart'
+    as domain;
 import 'package:mi_almacen_plus/core/domain/movement_rules.dart';
 import 'package:mi_almacen_plus/core/domain/movement_reason.dart';
 import 'package:mi_almacen_plus/core/domain/movement_type.dart';
@@ -54,7 +55,8 @@ class CategoryRepository {
 
   Future<int> count() => _dao.count();
 
-  domain.Category _mapCategory(db.Category row) => domain.Category(id: row.id, name: row.name);
+  domain.Category _mapCategory(db.Category row) =>
+      domain.Category(id: row.id, name: row.name);
 }
 
 /// Product repository — enforces domain rules; stock ONLY changes via movements.
@@ -77,12 +79,16 @@ class ProductRepository {
     return rows.map(_mapProduct).toList();
   }
 
-  Future<List<domain.Product>> getByCategory(String categoryId, {bool onlyActive = true}) async {
+  Future<List<domain.Product>> getByCategory(
+    String categoryId, {
+    bool onlyActive = true,
+  }) async {
     final rows = await _dao.getByCategory(categoryId, onlyActive: onlyActive);
     return rows.map(_mapProduct).toList();
   }
 
-  Future<int> count({bool onlyActive = true}) => _dao.count(onlyActive: onlyActive);
+  Future<int> count({bool onlyActive = true}) =>
+      _dao.count(onlyActive: onlyActive);
 
   /// Creates a product with initial stock; inserts INITIAL_STOCK movement.
   Future<domain.Product> create({
@@ -258,16 +264,16 @@ class ProductRepository {
   }
 
   domain.Product _mapProduct(db.Product row) => domain.Product(
-        id: row.id,
-        categoryId: row.categoryId,
-        userId: row.userId,
-        name: row.name,
-        unit: row.unit,
-        minimumStock: row.minimumStock,
-        currentStock: row.currentStock,
-        description: row.description,
-        isActive: row.isActive,
-      );
+    id: row.id,
+    categoryId: row.categoryId,
+    userId: row.userId,
+    name: row.name,
+    unit: row.unit,
+    minimumStock: row.minimumStock,
+    currentStock: row.currentStock,
+    description: row.description,
+    isActive: row.isActive,
+  );
 }
 
 /// Inventory movement repository — read-only history access.
@@ -283,14 +289,23 @@ class InventoryMovementRepository {
     return row == null ? null : _mapMovement(row);
   }
 
-  Future<List<domain.InventoryMovement>> getForProduct(String productId, {int limit = 50, int offset = 0}) async {
-    final rows = await _dao.getForProduct(productId, limit: limit, offset: offset);
+  Future<List<domain.InventoryMovement>> getForProduct(
+    String productId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final rows = await _dao.getForProduct(
+      productId,
+      limit: limit,
+      offset: offset,
+    );
     return rows.map(_mapMovement).toList();
   }
 
   Future<int> count() => _dao.count();
 
-  domain.InventoryMovement _mapMovement(db.InventoryMovement row) => domain.InventoryMovement(
+  domain.InventoryMovement _mapMovement(db.InventoryMovement row) =>
+      domain.InventoryMovement(
         id: row.id,
         productId: row.productId,
         userId: row.userId,

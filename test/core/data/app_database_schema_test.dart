@@ -28,25 +28,28 @@ void main() {
       await db.close();
     });
 
-    test('CHECK (currentStock >= 0) rejects a negative stock at DB level', () async {
-      await expectLater(
-        db.productDao.insertProduct(
-          ProductsCompanion.insert(
-            id: 'prod-bad',
-            categoryId: categoryId!,
-            userId: userId!,
-            name: 'Producto inválido',
-            unit: 'u',
-            minimumStock: 0,
-            currentStock: const Value(-1),
+    test(
+      'CHECK (currentStock >= 0) rejects a negative stock at DB level',
+      () async {
+        await expectLater(
+          db.productDao.insertProduct(
+            ProductsCompanion.insert(
+              id: 'prod-bad',
+              categoryId: categoryId!,
+              userId: userId!,
+              name: 'Producto inválido',
+              unit: 'u',
+              minimumStock: 0,
+              currentStock: const Value(-1),
+            ),
           ),
-        ),
-        throwsA(isA<SqliteException>()),
-      );
+          throwsA(isA<SqliteException>()),
+        );
 
-      // The rejected row must not persist.
-      expect(await db.productDao.getById('prod-bad'), isNull);
-    });
+        // The rejected row must not persist.
+        expect(await db.productDao.getById('prod-bad'), isNull);
+      },
+    );
 
     test('CHECK boundary: currentStock 0 is accepted', () async {
       await db.productDao.insertProduct(
@@ -66,22 +69,25 @@ void main() {
       expect(row!.currentStock, 0);
     });
 
-    test('foreign keys are enforced for products (invalid category rejected)', () async {
-      await expectLater(
-        db.productDao.insertProduct(
-          ProductsCompanion.insert(
-            id: 'prod-fk',
-            categoryId: 'no-such-category',
-            userId: userId!,
-            name: 'FK inválido',
-            unit: 'u',
-            minimumStock: 0,
+    test(
+      'foreign keys are enforced for products (invalid category rejected)',
+      () async {
+        await expectLater(
+          db.productDao.insertProduct(
+            ProductsCompanion.insert(
+              id: 'prod-fk',
+              categoryId: 'no-such-category',
+              userId: userId!,
+              name: 'FK inválido',
+              unit: 'u',
+              minimumStock: 0,
+            ),
           ),
-        ),
-        throwsA(isA<SqliteException>()),
-      );
+          throwsA(isA<SqliteException>()),
+        );
 
-      expect(await db.productDao.getById('prod-fk'), isNull);
-    });
+        expect(await db.productDao.getById('prod-fk'), isNull);
+      },
+    );
   });
 }

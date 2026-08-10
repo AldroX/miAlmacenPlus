@@ -17,7 +17,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
 
 /// DAO for category table access.
 @DriftAccessor(tables: [Categories])
-class CategoryDao extends DatabaseAccessor<AppDatabase> with _$CategoryDaoMixin {
+class CategoryDao extends DatabaseAccessor<AppDatabase>
+    with _$CategoryDaoMixin {
   CategoryDao(super.db);
 
   Future<Category?> getById(String id) =>
@@ -44,8 +45,12 @@ class ProductDao extends DatabaseAccessor<AppDatabase> with _$ProductDaoMixin {
     return query.get();
   }
 
-  Future<List<Product>> getByCategory(String categoryId, {bool onlyActive = true}) {
-    final query = select(products)..where((p) => p.categoryId.equals(categoryId));
+  Future<List<Product>> getByCategory(
+    String categoryId, {
+    bool onlyActive = true,
+  }) {
+    final query = select(products)
+      ..where((p) => p.categoryId.equals(categoryId));
     if (onlyActive) {
       query.where((p) => p.isActive.equals(true));
     }
@@ -58,24 +63,30 @@ class ProductDao extends DatabaseAccessor<AppDatabase> with _$ProductDaoMixin {
   }
 
   /// Inserts a new product.
-  Future<int> insertProduct(ProductsCompanion product) => into(products).insert(product);
+  Future<int> insertProduct(ProductsCompanion product) =>
+      into(products).insert(product);
 
-  Future<int> updateProduct(ProductsCompanion product) =>
-      (update(products)..where((p) => p.id.equals(product.id.value))).write(product);
+  Future<int> updateProduct(ProductsCompanion product) => (update(
+    products,
+  )..where((p) => p.id.equals(product.id.value))).write(product);
 
   Future<int> softDelete(String id) =>
-      (update(products)..where((p) => p.id.equals(id))).write(ProductsCompanion(isActive: const Value(false)));
+      (update(products)..where((p) => p.id.equals(id))).write(
+        ProductsCompanion(isActive: const Value(false)),
+      );
 
   /// Recomputes currentStock as the projection of the full movement trail
   /// (spec 2.1: currentStock == f(movements)). A pure sum over quantities is
   /// order-independent, so it is robust to movements sharing a timestamp.
   Future<int> recomputeStock(String productId) async {
-    final rows = await (select(inventoryMovements)
-          ..where((m) => m.productId.equals(productId)))
-        .get();
+    final rows = await (select(
+      inventoryMovements,
+    )..where((m) => m.productId.equals(productId))).get();
     var stock = 0;
     for (final row in rows) {
-      stock += row.type == MovementType.incoming.index ? row.quantity : -row.quantity;
+      stock += row.type == MovementType.incoming.index
+          ? row.quantity
+          : -row.quantity;
     }
     return stock;
   }
@@ -83,13 +94,19 @@ class ProductDao extends DatabaseAccessor<AppDatabase> with _$ProductDaoMixin {
 
 /// DAO for inventory movement table access.
 @DriftAccessor(tables: [InventoryMovements, Products])
-class InventoryMovementDao extends DatabaseAccessor<AppDatabase> with _$InventoryMovementDaoMixin {
+class InventoryMovementDao extends DatabaseAccessor<AppDatabase>
+    with _$InventoryMovementDaoMixin {
   InventoryMovementDao(super.db);
 
-  Future<InventoryMovement?> getById(String id) =>
-      (select(inventoryMovements)..where((m) => m.id.equals(id))).getSingleOrNull();
+  Future<InventoryMovement?> getById(String id) => (select(
+    inventoryMovements,
+  )..where((m) => m.id.equals(id))).getSingleOrNull();
 
-  Future<List<InventoryMovement>> getForProduct(String productId, {int limit = 50, int offset = 0}) {
+  Future<List<InventoryMovement>> getForProduct(
+    String productId, {
+    int limit = 50,
+    int offset = 0,
+  }) {
     return (select(inventoryMovements)
           ..where((m) => m.productId.equals(productId))
           ..orderBy([(m) => OrderingTerm.desc(m.occurredAt)])
