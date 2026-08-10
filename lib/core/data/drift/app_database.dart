@@ -17,7 +17,7 @@ part 'app_database.g.dart';
 /// App database for the local-first MVP.
 ///
 /// Schema:
-/// - users (id TEXT PK, name TEXT)
+/// - users (id TEXT PK, name TEXT, email TEXT nullable since v2)
 /// - categories (id TEXT PK, name TEXT)
 /// - products (id TEXT PK, categoryId TEXT FK, userId TEXT FK, name TEXT,
 ///   unit TEXT, minimumStock INTEGER, currentStock INTEGER, description TEXT,
@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase inMemory() => AppDatabase(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -68,7 +68,11 @@ class AppDatabase extends _$AppDatabase {
       ).insert(UsersCompanion.insert(id: uuid.v4(), name: 'Dueño'));
     },
     onUpgrade: (Migrator m, int from, int to) async {
-      // Future migrations go here.
+      // v1 -> v2 additive: users gain an optional email for a future
+      // auth/workspace flow (amendment 4). Nothing existing is dropped.
+      if (from < 2) {
+        await m.addColumn(users, users.email);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -77,10 +81,14 @@ class AppDatabase extends _$AppDatabase {
 }
 
 /// User table — V1 has no auth; a single device owner row is seeded.
+/// Email was added additively in schema v2 (future auth/workspace).
 class Users extends Table {
   TextColumn get id => text()();
 
   TextColumn get name => text()();
+
+  /// Optional contact for a future auth flow; NULL for existing owners.
+  TextColumn get email => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
