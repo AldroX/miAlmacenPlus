@@ -1,7 +1,9 @@
+import 'package:drift/native.dart' show SqliteException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mi_almacen_plus/core/data/drift/app_database.dart';
 import 'package:mi_almacen_plus/core/data/repositories/inventory_repository.dart';
 import 'package:mi_almacen_plus/core/domain/movement_reason.dart';
+import 'package:mi_almacen_plus/core/domain/movement_type.dart';
 
 void main() {
   group('InventoryMovementRepository', () {
@@ -154,6 +156,121 @@ void main() {
 
       expect(movements1, hasLength(3));
       expect(movements2, hasLength(2)); // INITIAL_STOCK + purchase
+    });
+  });
+
+  group('transaction rollback (spec 4.1 Sc.1)', () {
+    late AppDatabase db;
+    late ProductRepository productRepo;
+    late CategoryRepository categoryRepo;
+    late UserRepository userRepo;
+    late InventoryMovementRepository movementRepo;
+
+    String? defaultUserId;
+    String? categoryId;
+    String? productId;
+
+    setUp(() async {
+      db = AppDatabase.inMemory();
+      productRepo = ProductRepository(db);
+      categoryRepo = CategoryRepository(db);
+      userRepo = UserRepository(db);
+      movementRepo = InventoryMovementRepository(db);
+
+      final user = await userRepo.getOrCreateDefault();
+      defaultUserId = user.id;
+
+      final categories = await categoryRepo.getAll();
+      categoryId = categories.first.id;
+
+      final product = await productRepo.create(
+        categoryId: categoryId!,
+        userId: defaultUserId!,
+        name: 'Café',
+        unit: 'kg',
+        minimumStock: 5,
+        initialStock: 20,
+      );
+      productId = product.id;
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test(
+      'mid-transaction failure rolls back the movement insert and stock write',
+      () async {
+        // Set up a trail so we can prove nothing extra is persisted.
+        await productRepo.recordMovement(
+          productId: productId!,
+          userId: defaultUserId!,
+          reason: MovementReason.purchase,
+          quantity: 10,
+        );
+        expect((await productRepo.getById(productId!))!.currentStock, 30);
+        expect(await movementRepo.getForProduct(productId!), hasLength(2));
+
+        // Force a failure INSIDE the transaction: the movement insert
+        // succeeds, then the stock write violates CHECK (currentStock >= 0).
+        // The whole transaction must roll back both writes.
+        await expectLater(
+          db.transaction(() async {
+            await db.inventoryMovementDao.insertMovementWithStockUpdate(
+              InventoryMovementsCompanion.insert(
+                id: 'mv-rollback-1',
+                productId: productId!,
+                userId: defaultUserId!,
+                type: MovementType.incoming.index,
+                reason: MovementReason.purchase.index,
+                quantity: 5,
+                stockBefore: 30,
+                stockAfter: 35,
+                occurredAt: 12345,
+              ),
+              -1, // invalid stock write -> CHECK violation mid-transaction
+            );
+          }),
+          throwsA(isA<SqliteException>()),
+        );
+
+        // No movement row persisted (rollback of the first write).
+        final movements = await movementRepo.getForProduct(productId!);
+        expect(movements, hasLength(2));
+        expect(movements.any((m) => m.id == 'mv-rollback-1'), isFalse);
+
+        // Stock unchanged (rollback of the second write).
+        final product = (await productRepo.getById(productId!))!;
+        expect(product.currentStock, 30);
+      },
+    );
+
+    test('failing movement insert via public API leaves no movement and stock '
+        'unchanged', () async {
+      await productRepo.recordMovement(
+        productId: productId!,
+        userId: defaultUserId!,
+        reason: MovementReason.purchase,
+        quantity: 10,
+      );
+      expect((await productRepo.getById(productId!))!.currentStock, 30);
+
+      // An invalid user FK makes the movement insert fail inside the
+      // repository's own transaction.
+      await expectLater(
+        productRepo.recordMovement(
+          productId: productId!,
+          userId: 'no-such-user',
+          reason: MovementReason.purchase,
+          quantity: 5,
+        ),
+        throwsA(isA<SqliteException>()),
+      );
+
+      final movements = await movementRepo.getForProduct(productId!);
+      expect(movements, hasLength(2)); // INITIAL_STOCK + purchase
+      final product = (await productRepo.getById(productId!))!;
+      expect(product.currentStock, 30);
     });
   });
 }
