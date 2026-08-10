@@ -35,11 +35,14 @@ class UserRepository {
   domain.User _mapUser(db.User row) => domain.User(id: row.id, name: row.name);
 }
 
-/// Category repository — reads and counts seeded categories.
+/// Category repository — reads/counts seeded categories and inline
+/// quick-create (spec 3.3 Sc.1). No management screen.
 class CategoryRepository {
   CategoryRepository(this._db);
 
   final db.AppDatabase _db;
+
+  final _uuid = const Uuid();
 
   db.CategoryDao get _dao => _db.categoryDao;
 
@@ -54,6 +57,16 @@ class CategoryRepository {
   }
 
   Future<int> count() => _dao.count();
+
+  /// Creates a category on the fly (NewProduct picker) so it is immediately
+  /// selectable; ids are UUID v4 like every other entity.
+  Future<domain.Category> quickCreate(String name) async {
+    final id = _uuid.v4();
+    await _dao.insertCategory(
+      db.CategoriesCompanion.insert(id: id, name: name),
+    );
+    return domain.Category(id: id, name: name);
+  }
 
   domain.Category _mapCategory(db.Category row) =>
       domain.Category(id: row.id, name: row.name);

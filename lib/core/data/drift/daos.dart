@@ -27,6 +27,10 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
   Future<List<Category>> getAll() => select(categories).get();
 
   Future<int> count() => select(categories).get().then((c) => c.length);
+
+  /// Inserts a category (used for inline quick-create, spec 3.3 Sc.1).
+  Future<int> insertCategory(CategoriesCompanion category) =>
+      into(categories).insert(category);
 }
 
 /// DAO for product table access.
