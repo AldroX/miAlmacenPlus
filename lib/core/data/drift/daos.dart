@@ -1,5 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:mi_almacen_plus/core/data/drift/app_database.dart';
+import 'package:mi_almacen_plus/core/domain/entities/inventory_movement.dart'
+    as domain;
+import 'package:mi_almacen_plus/core/domain/movement_reason.dart';
+import 'package:mi_almacen_plus/core/domain/movement_rules.dart';
 import 'package:mi_almacen_plus/core/domain/movement_type.dart';
 
 part 'daos.g.dart';
@@ -80,19 +84,33 @@ class ProductDao extends DatabaseAccessor<AppDatabase> with _$ProductDaoMixin {
       );
 
   /// Recomputes currentStock as the projection of the full movement trail
-  /// (spec 2.1: currentStock == f(movements)). A pure sum over quantities is
-  /// order-independent, so it is robust to movements sharing a timestamp.
+  /// (spec 2.1: currentStock == f(movements)). Delegates the arithmetic to
+  /// the pure domain rule [projectStock] — order-independent, so it is robust
+  /// to movements sharing a timestamp; it also guards the invariant that a
+  /// trail never projects below zero.
   Future<int> recomputeStock(String productId) async {
     final rows = await (select(
       inventoryMovements,
     )..where((m) => m.productId.equals(productId))).get();
-    var stock = 0;
-    for (final row in rows) {
-      stock += row.type == MovementType.incoming.index
-          ? row.quantity
-          : -row.quantity;
-    }
-    return stock;
+    return projectStock(
+      initialStock:
+          0, // trails start at 0; INITIAL_STOCK movement covers seeding
+      movements: rows
+          .map(
+            (row) => domain.InventoryMovement(
+              id: row.id,
+              productId: row.productId,
+              userId: row.userId,
+              type: MovementType.values[row.type],
+              reason: MovementReason.values[row.reason],
+              quantity: row.quantity,
+              stockBefore: row.stockBefore,
+              stockAfter: row.stockAfter,
+              occurredAt: DateTime.fromMillisecondsSinceEpoch(row.occurredAt),
+            ),
+          )
+          .toList(),
+    );
   }
 }
 

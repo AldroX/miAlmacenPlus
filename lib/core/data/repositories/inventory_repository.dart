@@ -217,6 +217,12 @@ class ProductRepository {
   }
 
   /// Records a stock movement (IN/OUT) with atomic stock update + movement insert.
+  ///
+  /// Validation and the stock derivation (delta, stockBefore/stockAfter,
+  /// type-from-reason) are delegated to the pure domain rule [createMovement]
+  /// (spec 2.1: stock changes ONLY via movements) — this repository op is
+  /// backed by that domain API and adds only persistence + the soft-delete
+  /// guard (spec 4.1 Sc.2).
   Future<domain.InventoryMovement> recordMovement({
     required String productId,
     required String userId,
@@ -224,8 +230,6 @@ class ProductRepository {
     required int quantity,
     DateTime? occurredAt,
   }) async {
-    validateQuantity(quantity);
-
     final product = await getById(productId);
     if (product == null) throw ValidationError('Product not found: $productId');
     // Spec 4.1 Sc.2: soft-deleted products must not accept movements. The row
@@ -235,46 +239,40 @@ class ProductRepository {
       throw ValidationError('Product is deactivated: $productId');
     }
 
-    final type = reason.type;
-    if (type == MovementType.outgoing) {
-      validateOut(product.currentStock, quantity);
-    }
-
-    final delta = type == MovementType.incoming ? quantity : -quantity;
-    final stockBefore = product.currentStock;
-    final stockAfter = stockBefore + delta;
     final movementId = _uuid.v4();
-    final now = (occurredAt ?? DateTime.now()).millisecondsSinceEpoch;
+    final occurred = occurredAt ?? DateTime.now();
+
+    // Single validation gate: validateQuantity + validateOut (IN/OUT) run
+    // inside createMovement, before any DB write.
+    final movement = createMovement(
+      id: movementId,
+      productId: productId,
+      userId: userId,
+      reason: reason,
+      quantity: quantity,
+      currentStock: product.currentStock,
+      occurredAt: occurred,
+    );
 
     await _db.transaction(() async {
       // Insert movement
       await _movementDao.insertMovementWithStockUpdate(
         db.InventoryMovementsCompanion.insert(
-          id: movementId,
-          productId: productId,
-          userId: userId,
-          type: type.index,
-          reason: reason.index,
-          quantity: quantity,
-          stockBefore: stockBefore,
-          stockAfter: stockAfter,
-          occurredAt: now,
+          id: movement.id,
+          productId: movement.productId,
+          userId: movement.userId,
+          type: movement.type.index,
+          reason: movement.reason.index,
+          quantity: movement.quantity,
+          stockBefore: movement.stockBefore,
+          stockAfter: movement.stockAfter,
+          occurredAt: occurred.millisecondsSinceEpoch,
         ),
-        stockAfter,
+        movement.stockAfter,
       );
     });
 
-    return domain.InventoryMovement(
-      id: movementId,
-      productId: productId,
-      userId: userId,
-      type: type,
-      reason: reason,
-      quantity: quantity,
-      stockBefore: stockBefore,
-      stockAfter: stockAfter,
-      occurredAt: DateTime.fromMillisecondsSinceEpoch(now),
-    );
+    return movement;
   }
 
   /// Projection invariant: recompute stock from movement trail.
