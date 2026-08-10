@@ -13,6 +13,7 @@ void main() {
     late ProductRepository productRepo;
     late CategoryRepository categoryRepo;
     late UserRepository userRepo;
+    late InventoryMovementRepository movementRepo;
 
     String? defaultUserId;
     String? categoryId;
@@ -22,6 +23,7 @@ void main() {
       productRepo = ProductRepository(db);
       categoryRepo = CategoryRepository(db);
       userRepo = UserRepository(db);
+      movementRepo = InventoryMovementRepository(db);
 
       final user = await userRepo.getOrCreateDefault();
       defaultUserId = user.id;
@@ -331,6 +333,48 @@ void main() {
         expect(all, hasLength(1));
         expect(all.first.isActive, isFalse);
       });
+
+      test('soft delete keeps the movement trail (spec 3.2 Sc.1)', () async {
+        final created = await productRepo.create(
+          categoryId: categoryId!,
+          userId: defaultUserId!,
+          name: 'Café',
+          unit: 'kg',
+          minimumStock: 5,
+          initialStock: 20,
+        );
+        await productRepo.recordMovement(
+          productId: created.id,
+          userId: defaultUserId!,
+          reason: MovementReason.purchase,
+          quantity: 10,
+        );
+        expect(await movementRepo.getForProduct(created.id), hasLength(2));
+
+        await productRepo.softDelete(created.id);
+
+        // The full movement trail (INITIAL_STOCK + purchase) must survive
+        // the soft delete, with its stock before/after history intact.
+        final trail = await movementRepo.getForProduct(created.id);
+        expect(trail, hasLength(2));
+        expect(trail.map((m) => m.reason).toSet(), {
+          MovementReason.initialStock,
+          MovementReason.purchase,
+        });
+        final initial = trail.firstWhere(
+          (m) => m.reason == MovementReason.initialStock,
+        );
+        expect(initial.stockBefore, 0);
+        expect(initial.stockAfter, 20);
+
+        // And the product is gone from active lists while preserved as
+        // inactive (both halves of spec 3.2 Sc.1).
+        final active = await productRepo.getAll(onlyActive: true);
+        expect(active, isEmpty);
+        final all = await productRepo.getAll(onlyActive: false);
+        expect(all, hasLength(1));
+        expect(all.first.isActive, isFalse);
+      });
     });
 
     group('recordMovement', () {
@@ -453,34 +497,37 @@ void main() {
         );
       });
 
-      test('rejects movement for soft-deleted product (spec 4.1 Sc.2)', () async {
-        final product = await productRepo.create(
-          categoryId: categoryId!,
-          userId: defaultUserId!,
-          name: 'Café',
-          unit: 'kg',
-          minimumStock: 5,
-          initialStock: 10,
-        );
-        await productRepo.softDelete(product.id);
-
-        // Movement against a soft-deleted product must be rejected even
-        // though the product row still exists (mapped inactive).
-        await expectLater(
-          productRepo.recordMovement(
-            productId: product.id,
+      test(
+        'rejects movement for soft-deleted product (spec 4.1 Sc.2)',
+        () async {
+          final product = await productRepo.create(
+            categoryId: categoryId!,
             userId: defaultUserId!,
-            reason: MovementReason.purchase,
-            quantity: 10,
-          ),
-          throwsA(isA<ValidationError>()),
-        );
+            name: 'Café',
+            unit: 'kg',
+            minimumStock: 5,
+            initialStock: 10,
+          );
+          await productRepo.softDelete(product.id);
 
-        // Nothing changes: no stock mutation, product stays inactive.
-        final preserved = (await productRepo.getById(product.id))!;
-        expect(preserved.isActive, isFalse);
-        expect(preserved.currentStock, 10);
-      });
+          // Movement against a soft-deleted product must be rejected even
+          // though the product row still exists (mapped inactive).
+          await expectLater(
+            productRepo.recordMovement(
+              productId: product.id,
+              userId: defaultUserId!,
+              reason: MovementReason.purchase,
+              quantity: 10,
+            ),
+            throwsA(isA<ValidationError>()),
+          );
+
+          // Nothing changes: no stock mutation, product stays inactive.
+          final preserved = (await productRepo.getById(product.id))!;
+          expect(preserved.isActive, isFalse);
+          expect(preserved.currentStock, 10);
+        },
+      );
 
       test(
         'rejects OUT movement on soft-deleted product before stock validation '
