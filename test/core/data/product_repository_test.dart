@@ -453,6 +453,67 @@ void main() {
         );
       });
 
+      test('rejects movement for soft-deleted product (spec 4.1 Sc.2)', () async {
+        final product = await productRepo.create(
+          categoryId: categoryId!,
+          userId: defaultUserId!,
+          name: 'Café',
+          unit: 'kg',
+          minimumStock: 5,
+          initialStock: 10,
+        );
+        await productRepo.softDelete(product.id);
+
+        // Movement against a soft-deleted product must be rejected even
+        // though the product row still exists (mapped inactive).
+        await expectLater(
+          productRepo.recordMovement(
+            productId: product.id,
+            userId: defaultUserId!,
+            reason: MovementReason.purchase,
+            quantity: 10,
+          ),
+          throwsA(isA<ValidationError>()),
+        );
+
+        // Nothing changes: no stock mutation, product stays inactive.
+        final preserved = (await productRepo.getById(product.id))!;
+        expect(preserved.isActive, isFalse);
+        expect(preserved.currentStock, 10);
+      });
+
+      test(
+        'rejects OUT movement on soft-deleted product before stock validation '
+        '(spec 4.1 Sc.2)',
+        () async {
+          final product = await productRepo.create(
+            categoryId: categoryId!,
+            userId: defaultUserId!,
+            name: 'Café',
+            unit: 'kg',
+            minimumStock: 5,
+            initialStock: 10,
+          );
+          await productRepo.softDelete(product.id);
+
+          // The product is inactive, so the guard must fire BEFORE the OUT
+          // stock check: a ValidationError, not InsufficientStockError.
+          await expectLater(
+            productRepo.recordMovement(
+              productId: product.id,
+              userId: defaultUserId!,
+              reason: MovementReason.sale,
+              quantity: 15, // would overdraw if the guard did not fire first
+            ),
+            throwsA(isA<ValidationError>()),
+          );
+
+          final preserved = (await productRepo.getById(product.id))!;
+          expect(preserved.isActive, isFalse);
+          expect(preserved.currentStock, 10);
+        },
+      );
+
       test('all movement reasons work correctly', () async {
         final product = await productRepo.create(
           categoryId: categoryId!,

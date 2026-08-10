@@ -215,6 +215,12 @@ class ProductRepository {
 
     final product = await getById(productId);
     if (product == null) throw ValidationError('Product not found: $productId');
+    // Spec 4.1 Sc.2: soft-deleted products must not accept movements. The row
+    // still exists (soft delete keeps movements), so existence alone is not
+    // enough — the product must also be active.
+    if (!product.isActive) {
+      throw ValidationError('Product is deactivated: $productId');
+    }
 
     final type = reason.type;
     if (type == MovementType.outgoing) {
