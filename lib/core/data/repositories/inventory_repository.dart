@@ -56,6 +56,11 @@ class CategoryRepository {
     return rows.map(_mapCategory).toList();
   }
 
+  /// Reactive stream over all categories (design D11) — a quick-create is
+  /// reflected in pickers immediately.
+  Stream<List<domain.Category>> watchAll() =>
+      _dao.watchAll().map((rows) => rows.map(_mapCategory).toList());
+
   Future<int> count() => _dao.count();
 
   /// Creates a category on the fly (NewProduct picker) so it is immediately
@@ -91,6 +96,19 @@ class ProductRepository {
     final rows = await _dao.getAll(onlyActive: onlyActive);
     return rows.map(_mapProduct).toList();
   }
+
+  /// Reactive stream over products (design D11) — the UI auto-refreshes after
+  /// every create/update/movement without manual invalidation.
+  Stream<List<domain.Product>> watchAll({bool onlyActive = true}) =>
+      _dao
+          .watchAll(onlyActive: onlyActive)
+          .map((rows) => rows.map(_mapProduct).toList());
+
+  /// Reactive stream for a single product (design D11) — drives the detail
+  /// screen inline edit.
+  Stream<domain.Product?> watchById(String id) => _dao.watchById(id).map(
+    (row) => row == null ? null : _mapProduct(row),
+  );
 
   Future<List<domain.Product>> getByCategory(
     String categoryId, {
@@ -320,6 +338,16 @@ class InventoryMovementRepository {
   }
 
   Future<int> count() => _dao.count();
+
+  /// Reactive stream over a product's movement trail, newest-first (design
+  /// D11) — drives History and the dashboard's recent-movements tile.
+  Stream<List<domain.InventoryMovement>> watchForProduct(
+    String productId, {
+    int limit = 50,
+  }) =>
+      _dao
+          .watchForProduct(productId, limit: limit)
+          .map((rows) => rows.map(_mapMovement).toList());
 
   domain.InventoryMovement _mapMovement(db.InventoryMovement row) =>
       domain.InventoryMovement(

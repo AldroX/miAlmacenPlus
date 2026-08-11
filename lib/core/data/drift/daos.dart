@@ -17,6 +17,10 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       (select(users)..where((u) => u.id.equals(id))).getSingleOrNull();
 
   Future<List<User>> getAll() => select(users).get();
+
+  /// Reactive stream over all users (design D11) — the UI watches this
+  /// instead of polling so it auto-refreshes after writes.
+  Stream<List<User>> watchAll() => select(users).watch();
 }
 
 /// DAO for category table access.
@@ -35,6 +39,10 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
   /// Inserts a category (used for inline quick-create, spec 3.3 Sc.1).
   Future<int> insertCategory(CategoriesCompanion category) =>
       into(categories).insert(category);
+
+  /// Reactive stream over all categories (design D11) — a quick-create is
+  /// reflected in the UI immediately.
+  Stream<List<Category>> watchAll() => select(categories).watch();
 }
 
 /// DAO for product table access.
@@ -112,6 +120,22 @@ class ProductDao extends DatabaseAccessor<AppDatabase> with _$ProductDaoMixin {
           .toList(),
     );
   }
+
+  /// Reactive stream over products, newest-inserted first (design D11).
+  /// [onlyActive] mirrors [getAll] so soft-deleted rows disappear live.
+  Stream<List<Product>> watchAll({bool onlyActive = true}) {
+    final query = select(products)..orderBy([(p) => OrderingTerm.desc(p.id)]);
+    if (onlyActive) {
+      query.where((p) => p.isActive.equals(true));
+    }
+    return query.watch();
+  }
+
+  /// Reactive stream for a single product row (design D11) — emits null once
+  /// the row disappears (e.g. hard removal, never in the MVP).
+  Stream<Product?> watchById(String id) => (select(
+    products,
+  )..where((p) => p.id.equals(id))).watchSingleOrNull();
 }
 
 /// DAO for inventory movement table access.
@@ -149,4 +173,17 @@ class InventoryMovementDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<int> count() => select(inventoryMovements).get().then((c) => c.length);
+
+  /// Reactive stream over a product's movement trail, newest-first (design
+  /// D11) — drives History and the dashboard's recent-movements tile.
+  Stream<List<InventoryMovement>> watchForProduct(
+    String productId, {
+    int limit = 50,
+  }) {
+    return (select(inventoryMovements)
+          ..where((m) => m.productId.equals(productId))
+          ..orderBy([(m) => OrderingTerm.desc(m.occurredAt)])
+          ..limit(limit))
+        .watch();
+  }
 }
