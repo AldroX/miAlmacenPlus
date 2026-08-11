@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mi_almacen_plus/core/data/drift/app_database.dart';
 import 'package:mi_almacen_plus/core/data/repositories/inventory_repository.dart';
-import 'package:mi_almacen_plus/core/domain/entities/user.dart';
-import 'package:mi_almacen_plus/core/domain/errors.dart';
 
 void main() {
   group('UserRepository', () {
