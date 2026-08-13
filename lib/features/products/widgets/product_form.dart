@@ -152,6 +152,7 @@ class _ProductFormState extends ConsumerState<ProductForm> {
     final categories =
         ref.watch(categoriesStreamProvider).value ?? const <Category>[];
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final shadow =
         theme.extension<AppThemeExtra>()?.cardShadow ??
         AppThemeExtra.light.cardShadow;
@@ -187,7 +188,9 @@ class _ProductFormState extends ConsumerState<ProductForm> {
                     borderRadius: BorderRadius.circular(
                       AppTokens.borderRadiusMd,
                     ),
-                    border: Border.all(color: const Color(0x4DBEC8CD)),
+                    border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0x4D / 255),
+                    ),
                     boxShadow: shadow,
                   ),
                   child: Column(
@@ -331,7 +334,7 @@ class _ProductFormState extends ConsumerState<ProductForm> {
                             vertical: AppTokens.stackMd,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF4FF),
+                            color: cs.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(
                               AppTokens.borderRadiusDefault,
                             ),
@@ -345,7 +348,9 @@ class _ProductFormState extends ConsumerState<ProductForm> {
                               const Spacer(),
                               Text(
                                 '${widget.initialProduct?.currentStock ?? 0}',
-                                style: AppTheme.displayStock,
+                                style: AppTheme.displayStock.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
                             ],
                           ),
@@ -363,48 +368,26 @@ class _ProductFormState extends ConsumerState<ProductForm> {
     );
   }
 
-  /// Figma input decoration: filled #EFF4FF, 8px radius, 18/16 padding, 16px
-  /// Inter label in #3F484C.
+  /// Delegates to InputDecorationTheme (fill, radius, padding, colors).
   InputDecoration _fieldDecoration({required String label, String? hint}) {
     return InputDecoration(
       labelText: label.isEmpty ? null : label,
       hintText: hint,
-      filled: true,
-      fillColor: const Color(0xFFEFF4FF),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      labelStyle: const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 16,
-        color: Color(0xFF3F484C),
-      ),
-      hintStyle: const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 14,
-        color: Color(0xFFBEC8CD),
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppTokens.borderRadiusDefault),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppTokens.borderRadiusDefault),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppTokens.borderRadiusDefault),
-        borderSide: const BorderSide(color: Color(0xFF005A71)),
-      ),
     );
   }
 
   /// Figma fixed bottom action bar: translucent white, top hairline, full-width
   /// "Guardar Producto" button (56px, 12px radius, primary fill).
   Widget _bottomBar(ThemeData theme) {
+    final cs = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.all(AppTokens.marginMobile),
-      decoration: const BoxDecoration(
-        color: Color(0xE6FFFFFF),
-        border: Border(top: BorderSide(color: Color(0x33BEC8CD))),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: 0xE6 / 255),
+        border: Border(
+          top:
+              BorderSide(color: cs.outlineVariant.withValues(alpha: 0x33 / 255)),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -417,7 +400,7 @@ class _ProductFormState extends ConsumerState<ProductForm> {
             icon: const Icon(Icons.save_outlined),
             label: Text(widget.isNew ? 'Guardar Producto' : 'Guardar cambios'),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF005A71),
+              backgroundColor: cs.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTokens.borderRadiusMd),

@@ -84,13 +84,8 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTokens.borderRadiusXl),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-            color: Colors.black.withValues(alpha: 0.05),
-          ),
-        ],
+        boxShadow: theme.extension<AppThemeExtra>()?.cardShadow ??
+            AppThemeExtra.light.cardShadow,
       ),
       child: Row(
         children: [
@@ -106,7 +101,7 @@ class _StatCard extends StatelessWidget {
           Expanded(
             child: Text(label, style: theme.textTheme.bodyLarge),
           ),
-          Text(value, style: AppTheme.displayStock),
+          Text(value, style: AppTheme.displayStock.copyWith(color: theme.colorScheme.onSurface)),
         ],
       ),
     );

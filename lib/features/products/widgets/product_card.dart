@@ -25,18 +25,20 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final status = stockStatusOf(product.currentStock, product.minimumStock);
     final outOfStock = status == StockStatus.outOfStock;
     final radius = BorderRadius.circular(AppTokens.borderRadiusMd);
     final shadow =
-        Theme.of(context).extension<AppThemeExtra>()?.cardShadow ??
+        theme.extension<AppThemeExtra>()?.cardShadow ??
         AppThemeExtra.light.cardShadow;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: radius,
-        border: Border.all(color: const Color(0xFFE5EEFF)),
+        border: Border.all(color: cs.surfaceContainer),
         boxShadow: shadow,
       ),
       child: Material(
@@ -74,7 +76,7 @@ class ProductCard extends StatelessWidget {
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
                               height: 28 / 20,
-                              color: const Color(0xFF0B1C30),
+                              color: cs.onSurface,
                               decoration: outOfStock
                                   ? TextDecoration.lineThrough
                                   : TextDecoration.none,
@@ -86,15 +88,15 @@ class ProductCard extends StatelessWidget {
                               categoryName!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 14,
-                                height: 20 / 14,
-                                color: Color(0xFF6F787D),
-                              ),
-                            ),
-                          const SizedBox(height: AppTokens.stackSm),
-                          StatusChip(status: status),
+                               style: TextStyle(
+                                 fontFamily: 'Inter',
+                                 fontSize: 14,
+                                 height: 20 / 14,
+                                 color: cs.outline,
+                               ),
+                             ),
+                           const SizedBox(height: AppTokens.stackSm),
+                           StatusChip(status: status),
                         ],
                       ),
                     ),
@@ -107,17 +109,19 @@ class ProductCard extends StatelessWidget {
                           '${product.currentStock}',
                           style: AppTheme.displayStock.copyWith(
                             color: outOfStock
-                                ? const Color(0xFFBA1A1A)
-                                : const Color(0xFF0B1C30),
+                                ? (theme.brightness == Brightness.dark
+                                    ? cs.onSurface
+                                    : cs.error)
+                                : cs.onSurface,
                           ),
                         ),
                         Text(
                           product.unit,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            height: 20 / 14,
-                            color: Color(0xFF6F787D),
+                           style: TextStyle(
+                             fontFamily: 'Inter',
+                             fontSize: 14,
+                             height: 20 / 14,
+                             color: cs.outline,
                           ),
                         ),
                       ],

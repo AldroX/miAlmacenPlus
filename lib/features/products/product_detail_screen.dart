@@ -81,16 +81,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncProduct = ref.watch(productByIdProvider(widget.productId));
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xE6F8F9FF),
-        foregroundColor: const Color(0xFF005A71),
-        titleTextStyle: const TextStyle(
+        backgroundColor: cs.surface.withValues(alpha: 0xE6 / 255),
+        foregroundColor: cs.primary,
+        titleTextStyle: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF005A71),
+          color: cs.primary,
         ),
         title: const Text('Producto'),
         actions: [
@@ -126,6 +127,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   Widget _buildDetail(BuildContext context, Product product) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final status = stockStatusOf(product.currentStock, product.minimumStock);
     final categories =
         ref.watch(categoriesStreamProvider).value ?? const <Category>[];
@@ -152,6 +154,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       ),
       children: [
         _detailCard(
+          context: context,
           shadow: shadow,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,48 +162,48 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               Container(
                 height: 192,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCE9FF),
-                  borderRadius: BorderRadius.circular(
-                    AppTokens.borderRadiusDefault,
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(
+                      AppTokens.borderRadiusDefault,
+                    ),
                   ),
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  size: 48,
-                  color: Color(0xFF6F787D),
-                ),
+                  child: Icon(
+                    Icons.inventory_2_outlined,
+                    size: 48,
+                    color: cs.outline,
+                  ),
               ),
               const SizedBox(height: AppTokens.stackMd),
               Text(
                 'SKU: PROD-${product.id}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.05,
-                  color: Color(0xFF6F787D),
+                  color: cs.outline,
                 ),
               ),
               const SizedBox(height: AppTokens.stackSm),
               Text(
                 product.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Plus Jakarta Sans',
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   height: 32 / 24,
-                  color: Color(0xFF0B1C30),
+                  color: cs.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Categoría: $categoryName',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
                   height: 20 / 14,
-                  color: Color(0xFF3F484C),
+                  color: cs.onSurfaceVariant,
                 ),
               ),
             ],
@@ -208,16 +211,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         ),
         const SizedBox(height: AppTokens.stackLg),
         _detailCard(
+          context: context,
           shadow: shadow,
           padding: 24,
           child: Column(
             children: [
-              const Text(
+               Text(
                 'Stock Actual Disponible',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
-                  color: Color(0xFF3F484C),
+                  color: cs.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: AppTokens.stackSm),
@@ -229,17 +233,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   Text(
                     '${product.currentStock}',
                     style: AppTheme.displayStock.copyWith(
-                      color: const Color(0xFF0B1C30),
+                      color: cs.onSurface,
                     ),
                   ),
                   const SizedBox(width: AppTokens.stackSm),
-                  const Text(
-                    'Unidades',
-                    style: TextStyle(
-                      fontFamily: 'Plus Jakarta Sans',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF3F484C),
+              Text(
+                'Unidades',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  color: cs.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -257,7 +261,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 key: const Key('open-movement'),
                 label: 'Entrada (+)',
                 icon: Icons.add,
-                color: const Color(0xFF006C49),
+                color: cs.secondary,
                 onPressed: () =>
                     context.push('/products/${product.id}/movement'),
               ),
@@ -268,7 +272,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 key: const Key('open-exit'),
                 label: 'Salida (−)',
                 icon: Icons.remove,
-                color: const Color(0xFFBA1A1A),
+                color: cs.error,
                 onPressed: () =>
                     context.push('/products/${product.id}/movement?type=out'),
               ),
@@ -277,6 +281,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         ),
         const SizedBox(height: AppTokens.stackLg),
         _detailCard(
+          context: context,
           shadow: shadow,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,21 +289,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Historial Reciente',
+              Text(
+                'Historial Reciente',
                     style: TextStyle(
                       fontFamily: 'Plus Jakarta Sans',
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0B1C30),
-                    ),
-                  ),
-                  TextButton(
+                  color: cs.onSurface,
+                ),
+              ),
+              TextButton(
                     key: const Key('open-history'),
                     onPressed: () =>
                         context.push('/products/${product.id}/history'),
                     style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF005A71),
+                      foregroundColor: cs.primary,
                     ),
                     child: const Text(
                       'Ver todo',
@@ -343,16 +348,20 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   Widget _detailCard({
+    required BuildContext context,
     required List<BoxShadow> shadow,
     Widget? child,
     double? padding,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(padding ?? AppTokens.gutter),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTokens.borderRadiusMd),
-        border: Border.all(color: const Color(0x80DCE9FF)),
+        border: Border.all(
+          color: cs.surfaceContainerHigh.withValues(alpha: 0x80 / 255),
+        ),
         boxShadow: shadow,
       ),
       child: child,
@@ -482,15 +491,16 @@ class _MovementRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final incoming = movement.type == MovementType.incoming;
-    final accent = incoming ? const Color(0xFF006C49) : const Color(0xFFBA1A1A);
+    final accent = incoming ? cs.secondary : cs.error;
     return Row(
       children: [
         Container(
           width: 40,
           height: 40,
-          decoration: const BoxDecoration(
-            color: Color(0xFFDCE9FF),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHigh,
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -508,23 +518,23 @@ class _MovementRow extends StatelessWidget {
                 movement.reason.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   height: 20 / 14,
-                  color: Color(0xFF0B1C30),
+                  color: cs.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 _formatDate(movement.occurredAt),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 12,
                   letterSpacing: 0.05,
                   height: 16 / 12,
-                  color: Color(0xFF6F787D),
+                  color: cs.outline,
                 ),
               ),
             ],

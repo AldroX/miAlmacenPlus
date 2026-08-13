@@ -16,6 +16,7 @@ class ProductsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final products = ref.watch(filteredProductsProvider);
     final categories =
         ref.watch(categoriesStreamProvider).value ?? const <Category>[];
@@ -41,14 +42,14 @@ class ProductsScreen extends ConsumerWidget {
             onPressed: () {},
           ),
         ],
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 20,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.025,
-          color: Color(0xFF005A71),
+          color: cs.primary,
         ),
-        foregroundColor: const Color(0xFF005A71),
+        foregroundColor: cs.primary,
         title: const Text('Mi Almacén'),
       ),
       body: Column(
@@ -64,25 +65,26 @@ class ProductsScreen extends ConsumerWidget {
             child: TextField(
               key: const Key('products-search'),
               onChanged: notifier.setSearch,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                color: Color(0xFF3F484C),
-              ),
-              decoration: InputDecoration(
-                hintText: 'Buscar productos...',
-                hintStyle: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
-                  color: Color(0xFFBEC8CD),
+                  color: cs.onSurface,
                 ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  size: 18,
-                  color: Color(0xFF6F787D),
-                ),
-                filled: true,
-                fillColor: const Color(0x80D3E4FE),
+                decoration: InputDecoration(
+                  hintText: 'Buscar productos...',
+                  hintStyle: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 18,
+                    color: cs.outline,
+                  ),
+                  filled: true,
+                  fillColor:
+                      cs.surfaceContainerHighest.withValues(alpha: 0x80 / 255),
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(
@@ -115,6 +117,7 @@ class ProductsScreen extends ConsumerWidget {
               ),
               children: [
                 _categoryChip(
+                  context: context,
                   label: 'Todos',
                   key: const Key('categoryFilter-all'),
                   selected: filter.categoryId == null,
@@ -124,6 +127,7 @@ class ProductsScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: AppTokens.stackSm),
                     child: _categoryChip(
+                      context: context,
                       label: category.name,
                       key: Key('categoryFilter-${category.id}'),
                       selected: filter.categoryId == category.id,
@@ -168,11 +172,13 @@ class ProductsScreen extends ConsumerWidget {
   /// with 0.05em letter spacing; selected = primary fill, unselected = light
   /// blue fill.
   Widget _categoryChip({
+    required BuildContext context,
     required String label,
     required Key key,
     required bool selected,
     required VoidCallback onTap,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return ChoiceChip(
       key: key,
       label: Text(
@@ -183,13 +189,13 @@ class ProductsScreen extends ConsumerWidget {
           fontWeight: FontWeight.w600,
           letterSpacing: 0.05,
           height: 16 / 12,
-          color: selected ? Colors.white : const Color(0xFF3F484C),
+          color: selected ? Colors.white : cs.onSurfaceVariant,
         ),
       ),
       selected: selected,
       onSelected: (_) => onTap(),
-      selectedColor: const Color(0xFF005A71),
-      backgroundColor: const Color(0xFFDCE9FF),
+      selectedColor: cs.primary,
+      backgroundColor: cs.surfaceContainerHigh,
       side: BorderSide.none,
       showCheckmark: false,
       labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

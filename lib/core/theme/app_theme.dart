@@ -111,7 +111,7 @@ class AppTheme {
   static const _tertiaryContainer = Color(0xFF965F00);
   static const _onTertiaryContainer = Color(0xFFFFE9D4);
 
-  static const _surface = Color(0xFFF8F9FF);
+  static const _surface = Color(0xFFFFFFFF);
   static const _onSurface = Color(0xFF0B1C30);
   static const _surfaceContainerLow = Color(0xFFEFF4FF);
   static const _surfaceContainer = Color(0xFFE5EEFF);
@@ -164,21 +164,16 @@ class AppTheme {
     onErrorContainer: _onErrorContainer,
   );
 
-  static final ColorScheme _darkColorScheme = ColorScheme.dark(
+  static final ColorScheme _darkColorScheme = ColorScheme.fromSeed(
+    seedColor: _primary,
     brightness: Brightness.dark,
-    primary: _inversePrimary,
-    onPrimary: _inverseSurface,
-    primaryContainer: _primaryContainer,
-    onPrimaryContainer: _onPrimaryContainer,
-    secondary: _secondaryContainer,
-    onSecondary: _onSecondaryContainer,
-    tertiary: _tertiaryContainer,
-    onTertiary: _onTertiaryContainer,
-    surface: _inverseSurface,
-    onSurface: _inverseOnSurface,
-    outline: _outlineVariant,
-    outlineVariant: _outline,
-    error: _errorContainer,
+    primary: _primary,
+    onPrimary: _onPrimary,
+    secondary: _secondary,
+    onSecondary: _onSecondary,
+    tertiary: _tertiary,
+    onTertiary: _onTertiary,
+    error: _error,
     onError: _onError,
   );
 
@@ -227,96 +222,146 @@ class AppTheme {
     letterSpacing: 0.05,
   );
 
-  /// High-visibility stock number (DESING.MD display-stock).
-  static TextStyle get displayStock => _displayStock;
+   /// High-visibility stock number (DESING.MD display-stock).
+   static TextStyle get displayStock => _displayStock;
 
-  /// Compact stock-level label (DESING.MD label-stock).
-  static TextStyle get labelStock => _labelStock;
+   /// Compact stock-level label (DESING.MD label-stock).
+   static TextStyle get labelStock => _labelStock;
 
-  // ── ThemeData ────────────────────────────────────────────────────
-  static ThemeData get light => ThemeData(
-    colorScheme: _lightColorScheme,
-    textTheme: TextTheme(
-      displayLarge: _headlineLg,
-      displayMedium: _headlineMd,
-      headlineLarge: _headlineLg,
-      headlineMedium: _headlineMd,
-      bodyLarge: _bodyLg,
-      bodyMedium: _bodyMd,
-      labelMedium: _labelStock,
-    ),
-    scaffoldBackgroundColor: _surface,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
-      foregroundColor: _onSurface,
-      elevation: 0,
-      centerTitle: true,
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      sizeConstraints: BoxConstraints.tightFor(
-        width: AppTokens.fabSize,
-        height: AppTokens.fabSize,
-      ),
-    ),
-    cardTheme: CardThemeData(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.borderRadiusXl),
-      ),
-      shadowColor: const Color(0x0D000000),
-      elevation: 0,
-    ),
-    chipTheme: ChipThemeData(
-      selectedColor: _secondaryContainer.withAlpha(30),
-      backgroundColor: _surfaceContainer,
-      side: BorderSide.none,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.borderRadiusFull),
-      ),
-    ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      height: AppTokens.bottomNavHeight,
-      backgroundColor: Colors.white,
-      indicatorColor: const Color(0x1A00714D),
-      iconTheme: WidgetStateProperty.resolveWith(
-        (states) => IconThemeData(
-          color: states.contains(WidgetState.selected)
-              ? const Color(0xFF00714D)
-              : const Color(0xFF3F484C),
-        ),
-      ),
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: states.contains(WidgetState.selected)
-              ? const Color(0xFF00714D)
-              : const Color(0xFF3F484C),
-        ),
-      ),
-    ),
-    extensions: <ThemeExtension<dynamic>>[AppThemeExtra.light],
-  );
+   // ── Shared InputDecoration builder ────────────────────────────────
+   static InputDecorationTheme _inputDecoration(ColorScheme cs) {
+     return InputDecorationTheme(
+       filled: true,
+       fillColor: cs.surfaceContainerLow,
+       labelStyle: TextStyle(
+         fontFamily: 'Inter',
+         fontSize: 16,
+         color: cs.onSurfaceVariant,
+       ),
+       hintStyle: TextStyle(
+         fontFamily: 'Inter',
+         fontSize: 14,
+         color: cs.onSurfaceVariant,
+       ),
+       contentPadding:
+           const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+       border: OutlineInputBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusLg),
+         borderSide: BorderSide.none,
+       ),
+       enabledBorder: OutlineInputBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusLg),
+         borderSide: BorderSide.none,
+       ),
+       focusedBorder: OutlineInputBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusLg),
+         borderSide: BorderSide(color: cs.primary, width: 1),
+       ),
+       errorBorder: OutlineInputBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusLg),
+         borderSide: BorderSide(color: cs.error, width: 1),
+       ),
+       focusedErrorBorder: OutlineInputBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusLg),
+         borderSide: BorderSide(color: cs.error, width: 1),
+       ),
+     );
+   }
 
-  static ThemeData get dark => ThemeData(
-    colorScheme: _darkColorScheme,
-    textTheme: TextTheme(
-      displayLarge: _headlineLg,
-      displayMedium: _headlineMd,
-      headlineLarge: _headlineLg,
-      headlineMedium: _headlineMd,
-      bodyLarge: _bodyLg,
-      bodyMedium: _bodyMd,
-      labelMedium: _labelStock,
-    ),
-    scaffoldBackgroundColor: _inverseSurface,
-    extensions: <ThemeExtension<dynamic>>[AppThemeExtra.light],
-  );
+   // ── ThemeData ────────────────────────────────────────────────────
+   static ThemeData get light => ThemeData(
+     colorScheme: _lightColorScheme,
+     textTheme: TextTheme(
+       displayLarge: _headlineLg.copyWith(color: _lightColorScheme.onSurface),
+       displayMedium: _headlineMd.copyWith(color: _lightColorScheme.onSurface),
+       headlineLarge: _headlineLg.copyWith(color: _lightColorScheme.onSurface),
+       headlineMedium: _headlineMd.copyWith(
+         color: _lightColorScheme.onSurface,
+       ),
+       bodyLarge: _bodyLg.copyWith(color: _lightColorScheme.onSurface),
+       bodyMedium: _bodyMd.copyWith(color: _lightColorScheme.onSurface),
+       labelMedium: _labelStock.copyWith(
+         color: _lightColorScheme.onSurfaceVariant,
+       ),
+     ),
+     scaffoldBackgroundColor: _surface,
+     inputDecorationTheme: _inputDecoration(_lightColorScheme),
+     appBarTheme: const AppBarTheme(
+       backgroundColor: Colors.transparent,
+       foregroundColor: _onSurface,
+       elevation: 0,
+       centerTitle: true,
+     ),
+     floatingActionButtonTheme: const FloatingActionButtonThemeData(
+       sizeConstraints: BoxConstraints.tightFor(
+         width: AppTokens.fabSize,
+         height: AppTokens.fabSize,
+       ),
+     ),
+     cardTheme: CardThemeData(
+       color: Colors.white,
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusXl),
+       ),
+       shadowColor: const Color(0x0D000000),
+       elevation: 0,
+     ),
+     chipTheme: ChipThemeData(
+       selectedColor: _secondaryContainer.withAlpha(30),
+       backgroundColor: _surfaceContainer,
+       side: BorderSide.none,
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.circular(AppTokens.borderRadiusFull),
+       ),
+     ),
+     bottomSheetTheme: const BottomSheetThemeData(
+       backgroundColor: Colors.white,
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+       ),
+     ),
+     navigationBarTheme: NavigationBarThemeData(
+       height: AppTokens.bottomNavHeight,
+       backgroundColor: Colors.white,
+       indicatorColor: const Color(0x1A00714D),
+       iconTheme: WidgetStateProperty.resolveWith(
+         (states) => IconThemeData(
+           color: states.contains(WidgetState.selected)
+               ? const Color(0xFF00714D)
+               : const Color(0xFF3F484C),
+         ),
+       ),
+       labelTextStyle: WidgetStateProperty.resolveWith(
+         (states) => TextStyle(
+           fontFamily: 'Inter',
+           fontSize: 12,
+           fontWeight: FontWeight.w600,
+           color: states.contains(WidgetState.selected)
+               ? const Color(0xFF00714D)
+               : const Color(0xFF3F484C),
+         ),
+       ),
+     ),
+     extensions: <ThemeExtension<dynamic>>[AppThemeExtra.light],
+   );
+
+   static ThemeData get dark => ThemeData(
+     colorScheme: _darkColorScheme,
+     textTheme: TextTheme(
+       displayLarge: _headlineLg.copyWith(color: _darkColorScheme.onSurface),
+       displayMedium: _headlineMd.copyWith(color: _darkColorScheme.onSurface),
+       headlineLarge: _headlineLg.copyWith(color: _darkColorScheme.onSurface),
+       headlineMedium: _headlineMd.copyWith(
+         color: _darkColorScheme.onSurface,
+       ),
+       bodyLarge: _bodyLg.copyWith(color: _darkColorScheme.onSurface),
+       bodyMedium: _bodyMd.copyWith(color: _darkColorScheme.onSurface),
+       labelMedium: _labelStock.copyWith(
+         color: _darkColorScheme.onSurfaceVariant,
+       ),
+     ),
+     scaffoldBackgroundColor: _darkColorScheme.surface,
+     inputDecorationTheme: _inputDecoration(_darkColorScheme),
+     extensions: <ThemeExtension<dynamic>>[AppThemeExtra.light],
+   );
 }
