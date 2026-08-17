@@ -34,3 +34,10 @@ final movementsForProductProvider =
     StreamProvider.family<List<InventoryMovement>, String>((ref, productId) {
   return ref.watch(movementRepositoryProvider).watchForProduct(productId);
 });
+
+/// Recent movements across all products, newest-first (design D11 / dash 5.1)
+/// — drives the dashboard's recent-movements tile. Explicitly capped at 5 at
+/// the data layer; the widget further caps the visible list.
+final recentMovementsProvider = StreamProvider<List<InventoryMovement>>((ref) {
+  return ref.watch(movementRepositoryProvider).watchRecent(limit: 5);
+});
