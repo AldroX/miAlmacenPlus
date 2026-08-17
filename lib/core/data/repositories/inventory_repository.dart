@@ -340,7 +340,7 @@ class InventoryMovementRepository {
   Future<int> count() => _dao.count();
 
   /// Reactive stream over a product's movement trail, newest-first (design
-  /// D11) — drives History and the dashboard's recent-movements tile.
+  /// D11) — drives History.
   Stream<List<domain.InventoryMovement>> watchForProduct(
     String productId, {
     int limit = 50,
@@ -348,6 +348,14 @@ class InventoryMovementRepository {
       _dao
           .watchForProduct(productId, limit: limit)
           .map((rows) => rows.map(_mapMovement).toList());
+
+  /// Reactive stream over the most recent movements across all products,
+  /// newest-first (design D11 / dash 5.1) — feeds the dashboard's
+  /// recent-movements tile. [limit] caps the trail length; default 10 so that
+  /// incoming movements seeded at product creation are not always displaced by
+  /// later outgoing movements.
+  Stream<List<domain.InventoryMovement>> watchRecent({int limit = 10}) =>
+      _dao.watchRecent(limit: limit).map((rows) => rows.map(_mapMovement).toList());
 
   domain.InventoryMovement _mapMovement(db.InventoryMovement row) =>
       domain.InventoryMovement(

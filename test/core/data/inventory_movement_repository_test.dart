@@ -2,8 +2,24 @@ import 'package:drift/native.dart' show SqliteException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mi_almacen_plus/core/data/drift/app_database.dart';
 import 'package:mi_almacen_plus/core/data/repositories/inventory_repository.dart';
+import 'package:mi_almacen_plus/core/domain/entities/inventory_movement.dart'
+    as domain;
 import 'package:mi_almacen_plus/core/domain/movement_reason.dart';
 import 'package:mi_almacen_plus/core/domain/movement_type.dart';
+
+/// Polls until [condition] holds (drift streams emit asynchronously).
+Future<void> _waitFor(
+  bool Function() condition, {
+  int timeout = 3000,
+}) async {
+  final deadline = DateTime.now().add(Duration(milliseconds: timeout));
+  while (!condition()) {
+    if (DateTime.now().isAfter(deadline)) {
+      fail('Timed out waiting for stream emission');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+  }
+}
 
 void main() {
   group('InventoryMovementRepository', () {
@@ -156,6 +172,43 @@ void main() {
 
       expect(movements1, hasLength(3));
       expect(movements2, hasLength(2)); // INITIAL_STOCK + purchase
+    });
+
+    test('watchRecent emits newest-first domain movements capped by limit',
+        () async {
+      final snapshots = <List<domain.InventoryMovement>>[];
+      final sub = movementRepo
+          .watchRecent(limit: 2)
+          .listen((rows) => snapshots.add(rows));
+      await _waitFor(() => snapshots.isNotEmpty, timeout: 3000);
+      await sub.cancel();
+
+      // setUp seeds INITIAL_STOCK + purchase + sale = 3 movements; limit 2 caps.
+      expect(snapshots.last, isNotEmpty);
+      expect(snapshots.last.length, 2);
+      // Newest-first: the sale (latest) is first, purchase second.
+      expect(snapshots.last[0].reason, MovementReason.sale);
+      expect(snapshots.last[1].reason, MovementReason.purchase);
+    });
+
+    test('watchRecent re-emits after a new movement is recorded', () async {
+      final reasons = <List<domain.InventoryMovement>>[];
+      final sub = movementRepo.watchRecent().listen((rows) => reasons.add(rows));
+      await _waitFor(() => reasons.isNotEmpty, timeout: 3000);
+      expect(reasons.last.length, 3);
+
+      await productRepo.recordMovement(
+        productId: productId!,
+        userId: defaultUserId!,
+        reason: MovementReason.purchase,
+        quantity: 5,
+      );
+      await _waitFor(() => reasons.length > 1, timeout: 3000);
+      await sub.cancel();
+
+      // Re-emission now includes 4 movements, newest-first.
+      expect(reasons.last.length, 4);
+      expect(reasons.last.first.reason, MovementReason.purchase);
     });
   });
 

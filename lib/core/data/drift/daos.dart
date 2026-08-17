@@ -186,4 +186,15 @@ class InventoryMovementDao extends DatabaseAccessor<AppDatabase>
           ..limit(limit))
         .watch();
   }
+
+  /// Reactive stream over the most recent movements across all products,
+  /// newest-first (design D11 / dash 5.1) — feeds the dashboard's
+  /// recent-movements tile. [limit] caps the trail length; default 5 matches
+  /// the Figma tile height (3 sample rows + buffer).
+  Stream<List<InventoryMovement>> watchRecent({int limit = 5}) {
+    return (select(inventoryMovements)
+          ..orderBy([(m) => OrderingTerm.desc(m.occurredAt)])
+          ..limit(limit))
+        .watch();
+  }
 }

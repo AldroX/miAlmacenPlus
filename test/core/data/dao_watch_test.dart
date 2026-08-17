@@ -147,5 +147,80 @@ void main() {
       // Newest-first: the OUT (sale) must be the first row of the trail.
       expect(firstReasons.last, MovementReason.sale.index);
     });
+
+    test('inventoryMovementDao.watchRecent emits newest-first limited list',
+        () async {
+      final productA = await productRepo.create(
+        categoryId: categoryId,
+        userId: defaultUserId,
+        name: 'Café',
+        unit: 'kg',
+        minimumStock: 5,
+        initialStock: 10,
+      );
+      final productB = await productRepo.create(
+        categoryId: categoryId,
+        userId: defaultUserId,
+        name: 'Azúcar',
+        unit: 'kg',
+        minimumStock: 5,
+        initialStock: 10,
+      );
+      await productRepo.recordMovement(
+        productId: productA.id,
+        userId: defaultUserId,
+        reason: MovementReason.sale,
+        quantity: 3,
+      );
+      await productRepo.recordMovement(
+        productId: productB.id,
+        userId: defaultUserId,
+        reason: MovementReason.purchase,
+        quantity: 7,
+      );
+
+      final snapshots = <List<InventoryMovement>>[];
+      final sub = db.inventoryMovementDao
+          .watchRecent(limit: 3)
+          .listen((rows) => snapshots.add(rows));
+      await waitFor(() => snapshots.isNotEmpty);
+      await sub.cancel();
+
+      // 3 movements exist (INITIAL_STOCK x2 + sale + purchase = 4); limit caps to 3.
+      expect(snapshots.last, isNotEmpty);
+      expect(snapshots.last.length, lessThanOrEqualTo(3));
+      // Newest-first: the latest movement (purchase) is the first row.
+      expect(snapshots.last.first.reason, MovementReason.purchase.index);
+    });
+
+    test('inventoryMovementDao.watchRecent re-emits after a new movement',
+        () async {
+      final product = await productRepo.create(
+        categoryId: categoryId,
+        userId: defaultUserId,
+        name: 'Café',
+        unit: 'kg',
+        minimumStock: 5,
+        initialStock: 10,
+      );
+      final firstReasons = <int>[];
+      final sub = db.inventoryMovementDao
+          .watchRecent()
+          .listen((rows) => firstReasons.add(rows.isEmpty ? -1 : rows.first.reason));
+      await waitFor(() => firstReasons.isNotEmpty);
+      expect(firstReasons.last, MovementReason.initialStock.index);
+
+      await productRepo.recordMovement(
+        productId: product.id,
+        userId: defaultUserId,
+        reason: MovementReason.sale,
+        quantity: 2,
+      );
+      await waitFor(() => firstReasons.length > 1);
+      await sub.cancel();
+
+      // The re-emission exposes the newly-inserted sale as the newest row.
+      expect(firstReasons.last, MovementReason.sale.index);
+    });
   });
 }
