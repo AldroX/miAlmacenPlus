@@ -135,7 +135,7 @@ Avoid using harsh borders; instead, use subtle 1px inner strokes in a slightly d
 ## Shapes
 The shape language is "Extra Rounded" to evoke friendliness and safety. 
 
-- **Cards & Sheets:** Use a consistent 24px corner radius (`rounded-xl` in this system).
+- **Cards & Sheets:** Cards use a 12px corner radius (figma-confirmed for dashboard; `borderRadiusMd`); modal sheets keep the 24px radius (`borderRadiusXl`) for extra-rounded friendliness.
 - **Buttons & Inputs:** Use a 16px radius (`rounded-lg`) to maintain a cohesive look with larger containers.
 - **Status Chips:** Use a full "Pill" shape (999px) to distinguish them clearly from interactive buttons.
 
