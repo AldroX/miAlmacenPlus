@@ -41,3 +41,9 @@ final movementsForProductProvider =
 final recentMovementsProvider = StreamProvider<List<InventoryMovement>>((ref) {
   return ref.watch(movementRepositoryProvider).watchRecent(limit: 5);
 });
+
+/// All movements across products, newest-first — drives the Movements tab
+/// (design D11 / global movements list). Capped at 50 for MVP; pagination deferred.
+final allMovementsProvider = StreamProvider<List<InventoryMovement>>((ref) {
+  return ref.watch(movementRepositoryProvider).watchRecent(limit: 50);
+});

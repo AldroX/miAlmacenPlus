@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mi_almacen_plus/core/data/drift/app_database.dart';
+import 'package:mi_almacen_plus/core/domain/movement_reason.dart';
 import 'package:mi_almacen_plus/core/providers/app_providers.dart';
 import 'package:mi_almacen_plus/core/routing/app_router.dart';
 import 'package:mi_almacen_plus/main.dart';
@@ -62,7 +63,7 @@ void main() {
       expect(find.text('No hay productos todavía'), findsOneWidget);
     });
 
-    testWidgets('bottom navigation switches to the movements placeholder', (
+    testWidgets('bottom navigation switches to the movements list', (
       tester,
     ) async {
       await pumpApp(tester);
@@ -75,7 +76,36 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(AppBar, 'Movimientos'), findsOneWidget);
-      expect(find.text('Historial de movimientos'), findsOneWidget);
+      expect(find.text('Aún no hay movimientos'), findsOneWidget);
+    });
+
+    testWidgets('/movements renders list with data', (tester) async {
+      final app = await pumpApp(tester);
+      final seeded = await seedProducts(app.harness, const [
+        SeedSpec('Leche', stock: 10, min: 5),
+      ]);
+
+      // Record a movement
+      await app.harness.products.recordMovement(
+        productId: seeded.products.first.id,
+        userId: seeded.userId,
+        reason: MovementReason.purchase,
+        quantity: 5,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Movimientos'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'Movimientos'), findsOneWidget);
+      expect(find.text('Leche'), findsWidgets);
+      expect(find.text('+10'), findsOneWidget); // INITIAL_STOCK
+      expect(find.text('+5'), findsOneWidget);  // purchase
+      expect(find.textContaining('Hoy'), findsWidgets);
     });
 
     testWidgets('bottom navigation switches to the profile placeholder', (
