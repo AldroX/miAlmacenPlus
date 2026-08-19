@@ -102,7 +102,6 @@ GoRouter buildAppRouter() {
           ),
           GoRoute(
             path: 'history',
-            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) =>
                 HistoryScreen(productId: state.pathParameters['id']!),
           ),
